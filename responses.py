@@ -20,17 +20,21 @@ def is_toxic(message) -> bool:
     return is_banned or is_api_toxic
 
 
-def handle_response(message) -> str:
+def handle_response(message):
     p_message = message.lower()
 
     # Check if toxic
     if is_toxic(message):
         return "User said something toxic"
 
-    elif p_message == 'hello':
-        return "I say hello back to you"
-
     elif p_message == '!help':
         return "`did you ask for my help?`"
 
-    return "I don't understand you"
+    elif p_message[0] == "!":
+        return "I don't understand you"
+    
+    else:
+        return None
+
+    
+
