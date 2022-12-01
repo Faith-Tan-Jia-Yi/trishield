@@ -25,14 +25,7 @@ def handle_response(message):
 
     # Check if toxic
     if is_toxic(message):
-        return "User said something toxic"
-
-    elif p_message == '!help':
-        return "`did you ask for my help?`"
-
-    elif p_message[0] == "!":
-        return "I don't understand you"
-    
+        return "Please do consider changing your message"
     else:
         return None
 

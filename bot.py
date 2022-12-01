@@ -2,20 +2,44 @@ import discord
 import responses
 import os
 from dotenv import load_dotenv
+from discord.ext import commands
+from discord import ui
 
 
-async def send_message(message, user_message, is_private):
-    try:
-        response = responses.handle_response(user_message)
+# Modal Wrapper
+class PopUp(ui.Modal, title = "Trishield Intervention"):
+    def __init__(self, message:str, response:str) -> None:
+        super().__init__()
+        label = response
+        self.answer = ui.TextInput(label= label, style= discord.TextStyle.paragraph, default= message, max_length= 4000)
+        self.add_item(self.answer)
 
-        # If response is empty, do nothing
-        if response == None:
-            return
+    
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        # Extracts user response on Modal
+        message = self.children[0].value
+
+        # Sets censor to true if the message is still offensive
+        censor = True
+        if responses.handle_response(message) == None:
+            censor = False
         
-        # Send message to the user with private or public visibility
-        await message.author.send(response) if is_private else await message.channel.send(response)
-    except Exception as e:
-        print(e)
+        # Creates embed in channel
+        await create_embed(message, censor, interaction)
+
+async def create_embed(message:str, censor:bool, interaction: discord.Interaction):
+    embed = discord.Embed()
+
+    # Hides text if censor is true and adds a trigger warning
+    if (censor):
+        embed.description = "||"+message+"||"
+        embed.set_footer(text="Trigger Warning")
+    else:
+        embed.description = message
+    
+    # Sets author as the user
+    embed.set_author(name= interaction.user.display_name, icon_url= interaction.user.display_avatar)
+    await interaction.response.send_message(embed= embed)
 
 
 def run_discord_bot():
@@ -23,30 +47,44 @@ def run_discord_bot():
     TOKEN = os.getenv('DISCORD_TOKEN')
     intents = discord.Intents.default()
     intents.message_content = True
-    client = discord.Client(intents=intents)
+    client = commands.Bot(command_prefix="!", intents=intents)
 
     # On start, when bot is connected this will print
     @client.event
     async def on_ready():
+        synced = await client.tree.sync()
+        print("Synced "+ str(len(synced)) +" commands.")
         print(f"{client.user} is now running!")
 
+    # Returns the controller applet
+    @client.tree.command(name= "text", description="Send a text to a Trishield protected channel")
+    async def controller(interaction: discord.Interaction, message: str):
+        # Send the message to the handler to check for toxicity
+        response = responses.handle_response(message)
+
+        # Triggers modal if the message is offensive. Otherwise creates embed in channel
+        if response == None:
+            await create_embed(message=message, censor=False, interaction= interaction)
+        else:
+            await interaction.response.send_modal(PopUp(message= message, response= response))
+        
+    
+    # Does not allow users to send messages in the chat
     @client.event
     async def on_message(message):
         # Checks if the author is the bot
         if message.author == client.user:
             return
 
-        username = str(message.author)
-        user_message = str(message.content)
-        channel = str(message.channel)
+        # Extracts message information
+        username = message.author
+        user_message = message.content
+        channel = message.channel
 
-        print(f"{username} said {user_message} in {channel}")
-
-        # Send message privately to user
-        if user_message[0] == "?":
-            user_message = user_message[1:]
-            await send_message(message, user_message, is_private=True)
-        else:
-            await send_message(message, user_message, is_private=False)
+        # Deletes message
+        await message.delete()
+        # Sends a self-destructing information message
+        await channel.send("You can only send messages with /text", delete_after= 5)
+        # print(f"{str(username)} said {str(user_message)} in {str(channel)}") 
 
     client.run(TOKEN)
