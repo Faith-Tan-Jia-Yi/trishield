@@ -56,8 +56,13 @@ def run_discord_bot():
         print("Synced "+ str(len(synced)) +" commands.")
         print(f"{client.user} is now running!")
 
+
+    @client.tree.command(name= "clear")
+    async def clear(interaction: discord.Interaction):
+        await interaction.channel.purge()
+    
     # Returns the controller applet
-    @client.tree.command(name= "text", description="Send a text to a Trishield protected channel")
+    @client.tree.command(name= "t", description="Send a text to a Trishield protected channel")
     async def controller(interaction: discord.Interaction, message: str):
         # Send the message to the handler to check for toxicity
         response = responses.handle_response(message)
@@ -84,7 +89,7 @@ def run_discord_bot():
         # Deletes message
         await message.delete()
         # Sends a self-destructing information message
-        await channel.send("You can only send messages with /text", delete_after= 5)
+        await channel.send("You can only send messages with /t", delete_after= 5)
         # print(f"{str(username)} said {str(user_message)} in {str(channel)}") 
 
     client.run(TOKEN)

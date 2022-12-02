@@ -24,7 +24,7 @@ def handle_response(message):
     p_message = message.lower()
 
     # Check if toxic
-    if is_toxic(message):
+    if is_toxic(p_message):
         return "Please do consider changing your message"
     else:
         return None
