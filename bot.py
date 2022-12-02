@@ -3,51 +3,72 @@ import responses
 import os
 from dotenv import load_dotenv
 from discord.ext import commands
-from discord import ui
-
-
-# Modal Wrapper
-class PopUp(ui.Modal, title = "Trishield Intervention"):
-    def __init__(self, message:str, response:str) -> None:
-        super().__init__()
-        label = response
-        self.answer = ui.TextInput(label= label, style= discord.TextStyle.paragraph, default= message, max_length= 4000)
-        self.add_item(self.answer)
-
-    
-    async def on_submit(self, interaction: discord.Interaction) -> None:
-        # Extracts user response on Modal
-        message = self.children[0].value
-
-        # Sets censor to true if the message is still offensive
-        censor = True
-        if responses.handle_response(message) == None:
-            censor = False
-        
-        # Creates embed in channel
-        await create_embed(message, censor, interaction)
-
-async def create_embed(message:str, censor:bool, interaction: discord.Interaction):
-    embed = discord.Embed()
-
-    # Hides text if censor is true and adds a trigger warning
-    if (censor):
-        embed.description = "||"+message+"||"
-        embed.set_footer(text="Trigger Warning")
-    else:
-        embed.description = message
-    
-    # Sets author as the user
-    embed.set_author(name= interaction.user.display_name, icon_url= interaction.user.display_avatar)
-    await interaction.response.send_message(embed= embed)
-
+from discord import ui, ButtonStyle
 
 def run_discord_bot():
+    # Initializes Bot
     load_dotenv()
     TOKEN = os.getenv('DISCORD_TOKEN')
     intents = discord.Intents.default()
     intents.message_content = True
     client = commands.Bot(command_prefix="!", intents=intents)
+
+    # Bot Memory
+    last_deleted_messages = {}
+    last_bot_response = {}
+
+
+    # View Wrapper
+    class ButtonMenu(ui.View):
+        def __init__(self, message:str, feedback:str):
+            super().__init__()
+            self.value = None
+            self.message = message
+            self.feedback = feedback
+        
+        @ui.button(label= "Edit Message", style=ButtonStyle.green)
+        async def menuButton1(self, interaction: discord.Interaction, button: ui.Button):
+            await interaction.response.send_modal(PopUp(self.message, self.feedback))
+        
+        @ui.button(label= "Send Anyway", style=ButtonStyle.blurple)
+        async def menuButton2(self, interaction: discord.Interaction, button: ui.Button):
+            embed = discord.Embed()
+            embed.description = "||"+self.message+"||"
+            embed.set_footer(text="Trigger Warning")
+            embed.set_author(name= interaction.user.display_name, icon_url= interaction.user.display_avatar)
+            await interaction.response.send_message(embed= embed)
+
+
+    # Modal Wrapper
+    class PopUp(ui.Modal, title = "Trishield Intervention"):
+        def __init__(self, message:str, response:str) -> None:
+            super().__init__()
+            label = response
+            self.answer = ui.TextInput(label= label, style= discord.TextStyle.paragraph, default= message, max_length= 4000)
+            self.add_item(self.answer)
+
+        
+        async def on_submit(self, interaction: discord.Interaction) -> None:
+            # Extracts user response on Modal
+            message = self.children[0].value
+            response = responses.handle_response(message)
+            embed = discord.Embed()
+            
+            # Bot sends ephemeral messages depending on toxicity
+            # if it is non toxic, the bot asks the user to copy their message in chat
+            # otherwise 
+            if response == None:
+                embed.title = "You're good to go!"
+                embed.description = message
+                embed.set_footer(text= "You can send this message in the channel")
+                await interaction.response.send_message(embed= embed, ephemeral= True, delete_after=30)
+            else:
+                embed.title = "Trishield Alert!"
+                embed.description = "Your message was flagged by Trishield"
+                embed.add_field(name= "Message", value= message)
+                embed.add_field(name= "Response", value= response)
+                await interaction.response.send_message(view= ButtonMenu(message, response), embed= embed, ephemeral= True, delete_after= 30)
+            
 
     # On start, when bot is connected this will print
     @client.event
@@ -56,22 +77,26 @@ def run_discord_bot():
         print("Synced "+ str(len(synced)) +" commands.")
         print(f"{client.user} is now running!")
 
-
+    # Allows channel to be cleaned. Will be removed later
     @client.tree.command(name= "clear")
     async def clear(interaction: discord.Interaction):
-        await interaction.channel.purge()
+        await interaction.channel.purge(limit= 15)
     
     # Returns the controller applet
     @client.tree.command(name= "t", description="Send a text to a Trishield protected channel")
-    async def controller(interaction: discord.Interaction, message: str):
-        # Send the message to the handler to check for toxicity
-        response = responses.handle_response(message)
-
-        # Triggers modal if the message is offensive. Otherwise creates embed in channel
-        if response == None:
-            await create_embed(message=message, censor=False, interaction= interaction)
-        else:
-            await interaction.response.send_modal(PopUp(message= message, response= response))
+    async def controller(interaction: discord.Interaction):
+        # Extract user id
+        user_id = interaction.user.id
+        # Initialize message and response
+        message = ""
+        response = "Please write your message here"
+        if user_id in last_deleted_messages.keys():
+            message = last_deleted_messages[user_id]
+            response = last_bot_response[user_id]
+            last_deleted_messages.pop(user_id)
+            last_bot_response.pop(user_id)
+        # Pop modal with the deleted message prefilled
+        await interaction.response.send_modal(PopUp(message= message, response= response))
         
     
     # Does not allow users to send messages in the chat
@@ -82,14 +107,23 @@ def run_discord_bot():
             return
 
         # Extracts message information
-        username = message.author
+        user_id = message.author.id
         user_message = message.content
         channel = message.channel
 
-        # Deletes message
-        await message.delete()
-        # Sends a self-destructing information message
-        await channel.send("You can only send messages with /t", delete_after= 5)
+        response = responses.handle_response(user_message)
+        
+        if response != None:
+            # Saves latest message
+            last_deleted_messages[user_id] = user_message
+            last_bot_response[user_id] = response
+            # Deletes message
+            await message.delete()
+            # Sends a self-destructing information message
+            await channel.send("You can only send messages with /t", delete_after= 5)
+        
+
         # print(f"{str(username)} said {str(user_message)} in {str(channel)}") 
+
 
     client.run(TOKEN)
