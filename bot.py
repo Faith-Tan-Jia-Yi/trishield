@@ -2,8 +2,11 @@ import discord
 import responses
 import os
 from dotenv import load_dotenv
+from googleapiclient import discovery
+import json
 from discord.ext import commands
 from discord import ui, ButtonStyle
+
 
 def run_discord_bot():
     # Initializes Bot
@@ -72,7 +75,20 @@ def run_discord_bot():
                 await interaction.response.send_message(view= ButtonMenu(message, response), embed= embed, ephemeral= True, delete_after= 30)
             
 
-    # On start, when bot is connected this will print
+    # setting up perspective api client
+    PERSPECTIVE = os.getenv('PERSPECTIVE_TOKEN')
+    global apiclient
+    apiclient = discovery.build(
+    "commentanalyzer",
+    "v1alpha1",
+    developerKey=PERSPECTIVE,
+    discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
+    )
+    # threshold for toxicity can be defined in .env file
+    global threshold
+    threshold = os.getenv('TOXICITY_THRESHOLD')
+
+        # On start, when bot is connected this will print
     @client.event
     async def on_ready():
         synced = await client.tree.sync()

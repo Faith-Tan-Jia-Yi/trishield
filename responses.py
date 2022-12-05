@@ -1,4 +1,5 @@
 import csv
+import bot
 
 
 def is_toxic(message) -> bool:
@@ -9,25 +10,36 @@ def is_toxic(message) -> bool:
         file_reader = csv.reader(f)
 
         for line in file_reader:
+            # banned words list
             if line[0] in message:
                 is_banned = True
                 break
-
-    # Check using our fake Perspective API
-    is_api_toxic = False
-    # todo: random number generator to find out if its toxic or just use the real api
-
-    return is_banned or is_api_toxic
+    
+    return is_banned
 
 
 def handle_response(message):
     p_message = message.lower()
 
     # Check if toxic
-    if is_toxic(p_message):
-        return "Please do consider changing your message"
+    if is_toxic(message) or api_toxicity(message):
+        return "User said something toxic"
     else:
         return None
 
-    
 
+def api_toxicity(message) -> bool:
+    # check using perspective api
+    analyze_request = {
+    'comment': { 'text': str(message)},
+    'requestedAttributes': {'TOXICITY': {}} # can change attribute to SEVERE_TOXICITY etc
+    }
+
+    response = bot.apiclient.comments().analyze(body=analyze_request).execute()
+    toxicity_score = response["attributeScores"]["TOXICITY"]["summaryScore"]["value"]
+    print(toxicity_score)
+
+    if toxicity_score > float(bot.threshold):
+        return True
+    
+    return False
