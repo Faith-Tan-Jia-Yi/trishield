@@ -30,6 +30,7 @@ def run_discord_bot():
     developerKey=PERSPECTIVE,
     discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
     )
+    # threshold for toxicity can be defined in .env file
     global threshold
     threshold = os.getenv('TOXICITY_THRESHOLD')
 

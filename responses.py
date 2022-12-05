@@ -21,18 +21,8 @@ def is_toxic(message) -> bool:
 def handle_response(message) -> str:
     p_message = message.lower()
 
-    # check using perspective api
-    analyze_request = {
-    'comment': { 'text': str(p_message)},
-    'requestedAttributes': {'TOXICITY': {}}
-    }
-
-    response = bot.apiclient.comments().analyze(body=analyze_request).execute()
-    toxicity_score = response["attributeScores"]["TOXICITY"]["summaryScore"]["value"]
-    print(toxicity_score)
-
     # Check if toxic
-    if is_toxic(message) or toxicity_score > float(bot.threshold):
+    if is_toxic(message) or api_toxicity(message):
         return "User said something toxic"
 
     elif p_message == 'hello':
@@ -42,3 +32,21 @@ def handle_response(message) -> str:
         return "`did you ask for my help?`"
 
     return "I don't understand you"
+
+
+def api_toxicity(message) -> bool:
+    # check using perspective api
+    analyze_request = {
+    'comment': { 'text': str(message)},
+    'requestedAttributes': {'TOXICITY': {}} # can change attribute to SEVERE_TOXICITY etc
+    }
+
+    response = bot.apiclient.comments().analyze(body=analyze_request).execute()
+    toxicity_score = response["attributeScores"]["TOXICITY"]["summaryScore"]["value"]
+    print(toxicity_score)
+
+    if toxicity_score > float(bot.threshold):
+        return True
+    
+    return False
+
