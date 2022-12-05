@@ -26,10 +26,12 @@ def run_discord_bot():
             self.message = message
             self.feedback = feedback
         
+        # Pops modal so user can retype message
         @ui.button(label= "Edit Message", style=ButtonStyle.green)
         async def menuButton1(self, interaction: discord.Interaction, button: ui.Button):
             await interaction.response.send_modal(PopUp(self.message, self.feedback))
         
+        # Posts (embedded) user comment 
         @ui.button(label= "Send Anyway", style=ButtonStyle.blurple)
         async def menuButton2(self, interaction: discord.Interaction, button: ui.Button):
             embed = discord.Embed()
@@ -56,7 +58,7 @@ def run_discord_bot():
             
             # Bot sends ephemeral messages depending on toxicity
             # if it is non toxic, the bot asks the user to copy their message in chat
-            # otherwise 
+            # otherwise the bot explains the problem to the user and gives them a ButtonMenu
             if response == None:
                 embed.title = "You're good to go!"
                 embed.description = message
@@ -99,7 +101,7 @@ def run_discord_bot():
         await interaction.response.send_modal(PopUp(message= message, response= response))
         
     
-    # Does not allow users to send messages in the chat
+    # Everytime a new message is sent
     @client.event
     async def on_message(message):
         # Checks if the author is the bot
@@ -121,9 +123,6 @@ def run_discord_bot():
             await message.delete()
             # Sends a self-destructing information message
             await channel.send("You can only send messages with /t", delete_after= 5)
-        
-
-        # print(f"{str(username)} said {str(user_message)} in {str(channel)}") 
 
 
     client.run(TOKEN)
