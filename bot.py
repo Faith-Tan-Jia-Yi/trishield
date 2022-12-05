@@ -2,6 +2,8 @@ import discord
 import responses
 import os
 from dotenv import load_dotenv
+from googleapiclient import discovery
+import json
 
 
 async def send_message(message, user_message, is_private):
@@ -19,7 +21,19 @@ def run_discord_bot():
     intents.message_content = True
     client = discord.Client(intents=intents)
 
-    # On start, when bot is connected this will print
+    # setting up perspective api client
+    PERSPECTIVE = os.getenv('PERSPECTIVE_TOKEN')
+    global apiclient
+    apiclient = discovery.build(
+    "commentanalyzer",
+    "v1alpha1",
+    developerKey=PERSPECTIVE,
+    discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
+    )
+    global threshold
+    threshold = os.getenv('TOXICITY_THRESHOLD')
+
+        # On start, when bot is connected this will print
     @client.event
     async def on_ready():
         print(f"{client.user} is now running!")
