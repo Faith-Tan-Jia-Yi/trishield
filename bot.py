@@ -16,6 +16,19 @@ def run_discord_bot():
     intents.message_content = True
     client = commands.Bot(command_prefix="!", intents=intents)
 
+    # setting up perspective api client
+    PERSPECTIVE = os.getenv('PERSPECTIVE_TOKEN')
+    global apiclient
+    apiclient = discovery.build(
+    "commentanalyzer",
+    "v1alpha1",
+    developerKey=PERSPECTIVE,
+    discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
+    )
+    # threshold for toxicity can be defined in .env file
+    global threshold
+    threshold = os.getenv('TOXICITY_THRESHOLD')
+
     # Bot Memory
     last_deleted_messages = {}
     last_bot_response = {}
@@ -48,6 +61,8 @@ def run_discord_bot():
     class PopUp(ui.Modal, title = "Trishield Intervention"):
         def __init__(self, message:str, response:str) -> None:
             super().__init__()
+            
+            # Frame modal
             label = response
             self.answer = ui.TextInput(label= label, style= discord.TextStyle.paragraph, default= message, max_length= 4000)
             self.add_item(self.answer)
@@ -75,18 +90,7 @@ def run_discord_bot():
                 await interaction.response.send_message(view= ButtonMenu(message, response), embed= embed, ephemeral= True, delete_after= 30)
             
 
-    # setting up perspective api client
-    PERSPECTIVE = os.getenv('PERSPECTIVE_TOKEN')
-    global apiclient
-    apiclient = discovery.build(
-    "commentanalyzer",
-    "v1alpha1",
-    developerKey=PERSPECTIVE,
-    discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
-    )
-    # threshold for toxicity can be defined in .env file
-    global threshold
-    threshold = os.getenv('TOXICITY_THRESHOLD')
+    
 
         # On start, when bot is connected this will print
     @client.event
@@ -105,7 +109,13 @@ def run_discord_bot():
     async def controller(interaction: discord.Interaction):
         # Extract user id
         user_id = interaction.user.id
-        # Initialize message and response
+        # Pop modal with the deleted message prefilled
+        message, response = query_memory(user_id)
+        modal = PopUp(message, response)
+        await interaction.response.send_modal(modal)
+        
+    def query_memory(user_id:int):
+        # Query memory
         message = ""
         response = "Please write your message here"
         if user_id in last_deleted_messages.keys():
@@ -113,10 +123,7 @@ def run_discord_bot():
             response = last_bot_response[user_id]
             last_deleted_messages.pop(user_id)
             last_bot_response.pop(user_id)
-        # Pop modal with the deleted message prefilled
-        await interaction.response.send_modal(PopUp(message= message, response= response))
-        
-    
+        return (message,response)
     # Everytime a new message is sent
     @client.event
     async def on_message(message):
@@ -130,6 +137,7 @@ def run_discord_bot():
         channel = message.channel
 
         response = responses.handle_response(user_message)
+        print(response)
         
         if response != None:
             # Saves latest message

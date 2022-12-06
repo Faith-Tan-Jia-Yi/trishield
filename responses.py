@@ -34,10 +34,13 @@ def api_toxicity(message) -> bool:
     'comment': { 'text': str(message)},
     'requestedAttributes': {'TOXICITY': {}} # can change attribute to SEVERE_TOXICITY etc
     }
-
-    response = bot.apiclient.comments().analyze(body=analyze_request).execute()
-    toxicity_score = response["attributeScores"]["TOXICITY"]["summaryScore"]["value"]
-    print(toxicity_score)
+    try:
+        response = bot.apiclient.comments().analyze(body=analyze_request).execute()
+        toxicity_score = response["attributeScores"]["TOXICITY"]["summaryScore"]["value"]
+        print(toxicity_score)
+    except:
+        toxicity_score = 0
+    
 
     if toxicity_score > float(bot.threshold):
         return True
