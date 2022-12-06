@@ -138,7 +138,7 @@ def run_discord_bot():
             # Deletes message
             await message.delete()
             # Sends a self-destructing information message
-            await channel.send("You can only send messages with /t", delete_after= 5)
+            await channel.send("You can only send this message with /t", delete_after= 5)
 
 
     client.run(TOKEN)
