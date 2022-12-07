@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 from googleapiclient import discovery
 import csv
-import bot
 import nltk
 from itertools import chain
 from nltk.corpus import wordnet
@@ -11,18 +10,6 @@ import difflib
 # initialize according to .env file
 def init_env():
     load_dotenv()
-    # API Key, defined in .env file
-    TOKEN = os.getenv('PERSPECTIVE_TOKEN')
-
-    # setting up perspective api client
-    PERSPECTIVE = os.getenv('PERSPECTIVE_TOKEN')
-    global apiclient
-    apiclient = discovery.build(
-    "commentanalyzer",
-    "v1alpha1",
-    developerKey=TOKEN,
-    discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
-    )
 
     # defining toggled checks defined in .env
     global toggle_tox
@@ -37,6 +24,21 @@ def init_env():
 
     global censor_threshold
     censor_threshold = os.getenv('CENSOR_THRESHOLD')
+
+    if (toggle_tox == "1"):
+        # API Key, defined in .env file
+        TOKEN = os.getenv('PERSPECTIVE_TOKEN')
+
+        # setting up perspective api client
+        PERSPECTIVE = os.getenv('PERSPECTIVE_TOKEN')
+        global apiclient
+        apiclient = discovery.build(
+        "commentanalyzer",
+        "v1alpha1",
+        developerKey=TOKEN,
+        discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
+        )
+
 
     # expand list of banned words to include synonyms
     expand_words()

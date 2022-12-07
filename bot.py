@@ -2,7 +2,6 @@ import discord
 import responses
 import os
 from dotenv import load_dotenv
-import json
 from discord.ext import commands
 from discord import ui, ButtonStyle
 
