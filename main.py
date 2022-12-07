@@ -2,5 +2,5 @@ import bot
 import responses
 
 if __name__ == '__main__':
-    responses.expand_words()
+    responses.init_env()
     bot.run_discord_bot()

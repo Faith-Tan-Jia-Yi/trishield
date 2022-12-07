@@ -2,8 +2,6 @@ import discord
 import responses
 import os
 from dotenv import load_dotenv
-from googleapiclient import discovery
-import json
 from discord.ext import commands
 from discord import ui, ButtonStyle
 
@@ -15,19 +13,6 @@ def run_discord_bot():
     intents = discord.Intents.default()
     intents.message_content = True
     client = commands.Bot(command_prefix="!", intents=intents)
-
-    # setting up perspective api client
-    PERSPECTIVE = os.getenv('PERSPECTIVE_TOKEN')
-    global apiclient
-    apiclient = discovery.build(
-    "commentanalyzer",
-    "v1alpha1",
-    developerKey=PERSPECTIVE,
-    discoveryServiceUrl="https://commentanalyzer.googleapis.com/$discovery/rest?version=v1alpha1",
-    )
-    # threshold for toxicity can be defined in .env file
-    global threshold
-    threshold = os.getenv('TOXICITY_THRESHOLD')
 
     # Bot Memory
     last_deleted_messages = {}
