@@ -34,7 +34,7 @@ Make sure you are in the project directory by using ```cd trishield``` before ru
 
 Run the bot by running the file 'main.py': ```python main.py```. 
 
-If you get the message *TrishieldBot#XXX is now running!* it means that the bot is successfully online and is now active in the server.
+If you get the message *```TrishieldBot#____ is now running!```* it means that the bot is successfully online and is now active in the server.
 
 ### 3. Features
 - Moderators are able to edit the banned word list [ban_list.csv](/ban_list.csv) and select which words are flagged.
