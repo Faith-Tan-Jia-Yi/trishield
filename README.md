@@ -67,7 +67,7 @@ graph TD;
     H[user is notified that the message is deemed toxic and is given a chance to rewrite the message]-->J[user does not edit the message];
     I[user edits the message]-->L[trishield deems toxic]
     I[user edits the message]-->M[trishield deems non-toxic]
-    M[trishield deems non-toxic]-->N[trishield sends out the message on behalf of the user with the user's profile tagged to it]
+    M[trishield deems non-toxic]-->N[trishield notifies the user that their message is good to go and user can send it]
     J[user does not edit the message]-->K[user recieves a module warning that the message is flagged as toxic and prompted to either edit the message or send it anyways]
     L[trishield deems toxic]-->K[user recieves a module warning that the message is flagged as toxic and prompted to either edit the message or send it anyways]
    K[user recieves a module warning that the message is flagged as toxic and prompted to either edit the message or send it anyways]-->O[user choose to edit]
